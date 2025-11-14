@@ -49,8 +49,8 @@ contract Registry is IRegistry, Ownable2Step {
     /// @notice Maps service ids to an array of ratings
     mapping(uint40 _serviceId => Rating[] _ratings) public ratings;
 
-    /// @notice Address of the dispute resolver
-    address public disputeResolver;
+    /// @notice The dispute resolver contract
+    IDisputeResolver public disputeResolver;
 
     constructor(address _token, address _badges, address _escrow) Ownable(msg.sender) {
         if (_token == address(0) || _badges == address(0) || _escrow == address(0)) {
@@ -127,20 +127,20 @@ contract Registry is IRegistry, Ownable2Step {
     /// @inheritdoc IRegistry
     function dispute(uint40 _serviceId) external {
         if (_serviceId >= services.length) revert InvalidServiceId();
-        if (disputeResolver == address(0)) revert DisputeResolverNotSet();
+        if (address(disputeResolver) == address(0)) revert DisputeResolverNotSet();
 
-        IDisputeResolver(disputeResolver).dispute(_serviceId);
+        disputeResolver.dispute(_serviceId);
 
         emit Disputed(_serviceId);
     }
 
     /// @inheritdoc IRegistry
-    function setDisputeResolver(address _disputeResolver) external onlyOwner {
-        if (_disputeResolver == address(0)) revert InvalidDisputeResolver();
+    function setDisputeResolver(IDisputeResolver _disputeResolver) external onlyOwner {
+        if (address(_disputeResolver) == address(0)) revert InvalidDisputeResolver();
 
         disputeResolver = _disputeResolver;
 
-        emit DisputeResolverSet(_disputeResolver);
+        emit DisputeResolverSet(address(_disputeResolver));
     }
 
     // View functions

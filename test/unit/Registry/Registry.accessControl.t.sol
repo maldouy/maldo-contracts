@@ -8,6 +8,7 @@ import {MockEscrow} from "../../mocks/MockEscrow.sol";
 import {Badges} from "../../../src/contracts/Badges.sol";
 import {MockDisputeResolver} from "../../mocks/MockDisputeResolver.sol";
 import {IRegistry} from "../../../src/interfaces/IRegistry.sol";
+import {IDisputeResolver} from "../../../src/interfaces/IDisputeResolver.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RegistryAccessControlTest is Test {
@@ -59,10 +60,10 @@ contract RegistryAccessControlTest is Test {
 
         // Act & Assert
         vm.prank(owner);
-        registry.setDisputeResolver(address(disputeResolver));
+        registry.setDisputeResolver(disputeResolver);
 
         // Verify state change
-        assertEq(registry.disputeResolver(), address(disputeResolver));
+        assertEq(address(registry.disputeResolver()), address(disputeResolver));
     }
 
     function test_setDisputeResolver_revertWhen_calledByNonOwner() public {
@@ -72,14 +73,14 @@ contract RegistryAccessControlTest is Test {
         // Act & Assert
         vm.prank(unauthorized);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, unauthorized));
-        registry.setDisputeResolver(address(disputeResolver));
+        registry.setDisputeResolver(disputeResolver);
     }
 
     function test_setDisputeResolver_revertWhen_zeroAddress() public {
         // Act & Assert
         vm.prank(owner);
         vm.expectRevert(IRegistry.InvalidDisputeResolver.selector);
-        registry.setDisputeResolver(address(0));
+        registry.setDisputeResolver(IDisputeResolver(address(0)));
     }
 
     // Tests for updateService
@@ -152,7 +153,7 @@ contract RegistryAccessControlTest is Test {
 
         // Set dispute resolver
         vm.prank(owner);
-        registry.setDisputeResolver(address(disputeResolver));
+        registry.setDisputeResolver(disputeResolver);
 
         // Act & Assert
         vm.prank(beneficiary);
@@ -218,9 +219,9 @@ contract RegistryAccessControlTest is Test {
 
         // Act & Assert - New owner can call onlyOwner functions
         vm.prank(newOwner);
-        registry.setDisputeResolver(address(disputeResolver));
+        registry.setDisputeResolver(disputeResolver);
 
-        assertEq(registry.disputeResolver(), address(disputeResolver), "New owner should be able to set dispute resolver");
+        assertEq(address(registry.disputeResolver()), address(disputeResolver), "New owner should be able to set dispute resolver");
     }
 
     function test_transferOwnership_oldOwnerCannotUseOnlyOwnerFunctions() public {
@@ -238,7 +239,7 @@ contract RegistryAccessControlTest is Test {
         // Act & Assert - Old owner cannot call onlyOwner functions
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
-        registry.setDisputeResolver(address(disputeResolver));
+        registry.setDisputeResolver(disputeResolver);
     }
 
     function test_renounceOwnership_successful() public {

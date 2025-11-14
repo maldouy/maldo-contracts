@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IDisputeResolver} from "./IDisputeResolver.sol";
 
 /// @title IRegistry
 interface IRegistry {
@@ -161,8 +162,8 @@ interface IRegistry {
 
     /// @notice Sets the dispute resolver address
     /// @dev
-    /// @param _disputeResolver Address of the dispute resolver
-    function setDisputeResolver(address _disputeResolver) external;
+    /// @param _disputeResolver The dispute resolver contract
+    function setDisputeResolver(IDisputeResolver _disputeResolver) external;
 
     /// @notice Returns the token address used for deals and escrow
     /// @return _token the address of the token
