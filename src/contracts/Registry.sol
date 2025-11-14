@@ -13,11 +13,29 @@ import {IEscrowCustomBuyer} from "../interfaces/IEscrowCustomBuyer.sol";
 
 /// @title Registry
 contract Registry is IRegistry, Ownable2Step {
+    /*//////////////////////////////////////////////////////////////
+                             CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Maximum allowed rating value
     uint8 public constant MAX_RATING = 5;
 
+    /*//////////////////////////////////////////////////////////////
+                             IMMUTABLES
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice The token that is used to stake and unstake
     IERC20 public immutable token;
+
+    /// @notice The escrow contract
+    IEscrow public immutable escrow;
+
+    /// @notice The badges contract
+    Badges public immutable badges;
+
+    /*//////////////////////////////////////////////////////////////
+                             STORAGE
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Maps wallet addresses to user
     mapping(address _wallet => User _user) public users;
@@ -33,12 +51,6 @@ contract Registry is IRegistry, Ownable2Step {
 
     /// @notice Address of the dispute resolver
     address public disputeResolver;
-
-    /// @notice The escrow contract
-    IEscrow public immutable escrow;
-
-    /// @notice The badges contract
-    Badges public immutable badges;
 
     constructor(address _token, address _badges, address _escrow) Ownable(msg.sender) {
         if (_token == address(0) || _badges == address(0) || _escrow == address(0)) {
