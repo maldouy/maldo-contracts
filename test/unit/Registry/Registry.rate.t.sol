@@ -305,13 +305,16 @@ contract RegistryRateTest is Test {
         }
     }
 
-    function test_rate_highRatingValues() public {
-        // Test edge case with high rating values (should still work)
+    function test_rate_revertWhen_ratingTooHigh() public {
+        // Test that ratings above MAX_RATING (5) are rejected
         vm.prank(beneficiary);
-        registry.rate(dealId, 255, "Max uint8 rating"); // Max uint8 value
+        vm.expectRevert(IRegistry.InvalidRating.selector);
+        registry.rate(dealId, 6, "Rating too high");
 
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings[0].rating, 255, "Should accept max uint8 rating");
+        // Test with max uint8 value
+        vm.prank(beneficiary);
+        vm.expectRevert(IRegistry.InvalidRating.selector);
+        registry.rate(dealId, 255, "Max uint8 rating should be rejected");
     }
 
     function test_rate_emptyReview() public {

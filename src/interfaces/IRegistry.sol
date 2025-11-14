@@ -111,6 +111,9 @@ interface IRegistry {
     /// @notice Thrown when deal ID doesn't exist
     error InvalidDealId();
 
+    /// @notice Thrown when rating value is invalid (must be 0-5)
+    error InvalidRating();
+
     //////////////////////////////////////////////////////
     ////////////////////// FUNCTIONS /////////////////////
     //////////////////////////////////////////////////////

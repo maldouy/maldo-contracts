@@ -11,6 +11,9 @@ import {IEscrowCustomBuyer} from "../interfaces/IEscrowCustomBuyer.sol";
 
 /// @title Registry
 contract Registry is IRegistry {
+    /// @notice Maximum allowed rating value
+    uint8 public constant MAX_RATING = 5;
+
     /// @notice The owner of the registry
     address public immutable owner;
 
@@ -108,6 +111,7 @@ contract Registry is IRegistry {
     /// @inheritdoc IRegistry
     function rate(uint40 _dealId, uint8 _rating, string calldata _review) external {
         if (_dealId >= deals.length) revert InvalidDealId();
+        if (_rating > MAX_RATING) revert InvalidRating();
 
         if (deals[_dealId].beneficiary != msg.sender && services[deals[_dealId].serviceId].tasker != msg.sender) {
             revert Unauthorized();
