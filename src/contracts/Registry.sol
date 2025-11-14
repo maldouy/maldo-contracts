@@ -97,17 +97,14 @@ contract Registry is IRegistry, Ownable2Step {
 
         uint40 nextDealId = uint40(deals.length);
 
-        uint256 agreementId = _createEscrowAgreement(_beneficiary, _price, _duration, _agreementURI);
-
-        deals.push(
-            Deal({
-                id: nextDealId,
-                serviceId: _serviceId,
-                price: _price,
-                beneficiary: _beneficiary,
-                agreementId: agreementId
-            })
-        );
+        deals.push(Deal({
+            id: nextDealId,
+            serviceId: _serviceId,
+            price: _price,
+            beneficiary: _beneficiary,
+            agreementId: 0
+        }));
+        deals[nextDealId].agreementId = _createEscrowAgreement(_beneficiary, _price, _duration, _agreementURI);
 
         emit DealCreated(nextDealId);
     }
