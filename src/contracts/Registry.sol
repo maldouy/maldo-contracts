@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IRegistry} from "../interfaces/IRegistry.sol";
 import {IEscrow} from "@kleros/escrow-v2/interfaces/IEscrow.sol";
 import {Badges} from "./Badges.sol";
@@ -10,12 +12,9 @@ import {IDisputeResolver} from "../interfaces/IDisputeResolver.sol";
 import {IEscrowCustomBuyer} from "../interfaces/IEscrowCustomBuyer.sol";
 
 /// @title Registry
-contract Registry is IRegistry {
+contract Registry is IRegistry, Ownable2Step {
     /// @notice Maximum allowed rating value
     uint8 public constant MAX_RATING = 5;
-
-    /// @notice The owner of the registry
-    address public immutable owner;
 
     /// @notice The token that is used to stake and unstake
     IERC20 public immutable token;
@@ -41,11 +40,10 @@ contract Registry is IRegistry {
     /// @notice The badges contract
     Badges public immutable badges;
 
-    constructor(address _token, address _badges, address _escrow) {
+    constructor(address _token, address _badges, address _escrow) Ownable(msg.sender) {
         if (_token == address(0) || _badges == address(0) || _escrow == address(0)) {
             revert InvalidConstructorParams();
         }
-        owner = msg.sender;
         token = ERC20(_token);
         badges = Badges(_badges);
         escrow = IEscrow(_escrow);
@@ -134,9 +132,7 @@ contract Registry is IRegistry {
     }
 
     /// @inheritdoc IRegistry
-    function setDisputeResolver(address _disputeResolver) external {
-        if (owner != msg.sender) revert Unauthorized();
-
+    function setDisputeResolver(address _disputeResolver) external onlyOwner {
         disputeResolver = _disputeResolver;
 
         emit DisputeResolverSet(_disputeResolver);
