@@ -133,6 +133,8 @@ contract Registry is IRegistry, Ownable2Step {
 
     /// @inheritdoc IRegistry
     function setDisputeResolver(address _disputeResolver) external onlyOwner {
+        if (_disputeResolver == address(0)) revert InvalidDisputeResolver();
+
         disputeResolver = _disputeResolver;
 
         emit DisputeResolverSet(_disputeResolver);

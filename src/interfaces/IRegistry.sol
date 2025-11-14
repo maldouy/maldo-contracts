@@ -114,6 +114,9 @@ interface IRegistry {
     /// @notice Thrown when rating value is invalid (must be 0-5)
     error InvalidRating();
 
+    /// @notice Thrown when dispute resolver address is invalid (zero address)
+    error InvalidDisputeResolver();
+
     //////////////////////////////////////////////////////
     ////////////////////// FUNCTIONS /////////////////////
     //////////////////////////////////////////////////////

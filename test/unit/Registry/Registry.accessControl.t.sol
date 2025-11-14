@@ -75,6 +75,13 @@ contract RegistryAccessControlTest is Test {
         registry.setDisputeResolver(address(disputeResolver));
     }
 
+    function test_setDisputeResolver_revertWhen_zeroAddress() public {
+        // Act & Assert
+        vm.prank(owner);
+        vm.expectRevert(IRegistry.InvalidDisputeResolver.selector);
+        registry.setDisputeResolver(address(0));
+    }
+
     // Tests for updateService
     function test_updateService_revertWhen_calledByNonTasker() public {
         // Arrange
