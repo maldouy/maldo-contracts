@@ -66,10 +66,7 @@ contract Registry is IRegistry, Ownable2Step {
     }
 
     /// @inheritdoc IRegistry
-    function updateService(uint40 _serviceId, string calldata _description) external {
-        if (_serviceId >= services.length) revert InvalidServiceId();
-        if (services[_serviceId].tasker != msg.sender) revert Unauthorized();
-
+    function updateService(uint40 _serviceId, string calldata _description) external onlyServiceOwner(_serviceId) {
         Service storage service = services[_serviceId];
         service.description = _description;
 
@@ -83,10 +80,7 @@ contract Registry is IRegistry, Ownable2Step {
         address _beneficiary,
         uint256 _duration,
         string calldata _agreementURI
-    ) external {
-        if (_serviceId >= services.length) revert InvalidServiceId();
-        if (services[_serviceId].tasker != msg.sender) revert Unauthorized();
-
+    ) external onlyServiceOwner(_serviceId) {
         if (_beneficiary == address(0)) revert InvalidBeneficiary();
 
         uint40 nextDealId = uint40(deals.length);
@@ -169,5 +163,17 @@ contract Registry is IRegistry, Ownable2Step {
                 payable(_beneficiary),
                 payable(msg.sender)
             );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Ensures the caller is the owner of the service
+    /// @param _serviceId ID of the service to check ownership
+    modifier onlyServiceOwner(uint40 _serviceId) {
+        if (_serviceId >= services.length) revert InvalidServiceId();
+        if (services[_serviceId].tasker != msg.sender) revert Unauthorized();
+        _;
     }
 }
