@@ -155,8 +155,17 @@ contract Registry is IRegistry, Ownable2Step {
         return deals.length;
     }
 
-    // Escrow functions
+    /*//////////////////////////////////////////////////////////////
+                            INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
 
+    /// @notice Creates an escrow agreement for a deal
+    /// @dev This internal function wraps the escrow contract's createERC20TransactionCustomBuyer
+    /// @param _beneficiary The address that will receive the payment (client)
+    /// @param _amount The amount of tokens to be escrowed
+    /// @param _duration The duration in seconds until the escrow deadline
+    /// @param _agreementURI IPFS hash or URI containing the agreement details
+    /// @return _agreementId The ID of the created escrow agreement
     function _createEscrowAgreement(
         address _beneficiary,
         uint256 _amount,
