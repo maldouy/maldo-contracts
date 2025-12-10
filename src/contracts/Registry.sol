@@ -92,13 +92,9 @@ contract Registry is IRegistry, Ownable2Step {
 
         uint40 nextDealId = uint40(deals.length);
 
-        deals.push(Deal({
-            id: nextDealId,
-            serviceId: _serviceId,
-            price: _price,
-            beneficiary: _beneficiary,
-            agreementId: 0
-        }));
+        deals.push(
+            Deal({id: nextDealId, serviceId: _serviceId, price: _price, beneficiary: _beneficiary, agreementId: 0})
+        );
         deals[nextDealId].agreementId = _createEscrowAgreement(_beneficiary, _price, _duration, _agreementURI);
 
         emit DealCreated(nextDealId);
@@ -181,15 +177,14 @@ contract Registry is IRegistry, Ownable2Step {
         uint256 _duration,
         string calldata _agreementURI
     ) internal returns (uint256 _agreementId) {
-        _agreementId = IEscrowCustomBuyer(address(escrow))
-            .createERC20TransactionCustomBuyer(
-                _amount,
-                IERC20(address(token)),
-                block.timestamp + _duration,
-                _agreementURI,
-                payable(_beneficiary),
-                payable(msg.sender)
-            );
+        _agreementId = IEscrowCustomBuyer(address(escrow)).createERC20TransactionCustomBuyer(
+            _amount,
+            IERC20(address(token)),
+            block.timestamp + _duration,
+            _agreementURI,
+            payable(_beneficiary),
+            payable(msg.sender)
+        );
     }
 
     /*//////////////////////////////////////////////////////////////

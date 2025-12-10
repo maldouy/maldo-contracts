@@ -221,7 +221,11 @@ contract RegistryAccessControlTest is Test {
         vm.prank(newOwner);
         registry.setDisputeResolver(disputeResolver);
 
-        assertEq(address(registry.disputeResolver()), address(disputeResolver), "New owner should be able to set dispute resolver");
+        assertEq(
+            address(registry.disputeResolver()),
+            address(disputeResolver),
+            "New owner should be able to set dispute resolver"
+        );
     }
 
     function test_transferOwnership_oldOwnerCannotUseOnlyOwnerFunctions() public {

@@ -161,7 +161,13 @@ contract Badges is ERC1155, Ownable, AccessControl, ReentrancyGuard {
     /// @param id Token ID
     /// @param amount Amount being transferred
     /// @param data Additional data
-    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) public override {
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) public override {
         // Allow minting (from = address(0)) and burning (to = address(0))
         if (from != address(0) && to != address(0)) {
             if (badges[id].creator != msg.sender) {

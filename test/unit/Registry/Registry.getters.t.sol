@@ -185,11 +185,11 @@ contract RegistryGettersTest is Test {
         registry.rate(1, 3, "okay from deal 2");
 
         // Verify each deal has its own separate review
-        (, , uint8 deal0Rating, string memory deal0Review) = registry.dealReviews(0);
+        (,, uint8 deal0Rating, string memory deal0Review) = registry.dealReviews(0);
         assertEq(deal0Rating, 5);
         assertEq(deal0Review, "excellent from deal 1");
 
-        (, , uint8 deal1Rating, string memory deal1Review) = registry.dealReviews(1);
+        (,, uint8 deal1Rating, string memory deal1Review) = registry.dealReviews(1);
         assertEq(deal1Rating, 3);
         assertEq(deal1Review, "okay from deal 2");
     }

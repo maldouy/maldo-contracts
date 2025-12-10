@@ -280,7 +280,7 @@ contract RegistryRateTest is Test {
             registry.rate(testDealId, rating, review);
 
             // Verify the rating was stored correctly
-            (, , uint8 customerRating, string memory customerReview) = registry.dealReviews(testDealId);
+            (,, uint8 customerRating, string memory customerReview) = registry.dealReviews(testDealId);
             assertEq(customerRating, rating, "Rating should match expected value");
             assertEq(customerReview, review, "Review should match");
         }
@@ -315,7 +315,7 @@ contract RegistryRateTest is Test {
         registry.rate(dealId, rating, emptyReview);
 
         // Assert
-        (, , uint8 customerRating, string memory customerReview) = registry.dealReviews(dealId);
+        (,, uint8 customerRating, string memory customerReview) = registry.dealReviews(dealId);
         assertEq(customerReview, emptyReview, "Should accept empty review");
         assertEq(customerRating, rating, "Rating should still be set");
     }
@@ -338,7 +338,7 @@ contract RegistryRateTest is Test {
         registry.rate(dealId, rating, longReview);
 
         // Assert
-        (, , , string memory customerReview) = registry.dealReviews(dealId);
+        (,,, string memory customerReview) = registry.dealReviews(dealId);
         assertEq(customerReview, longReview, "Should accept long review");
     }
 
@@ -352,7 +352,7 @@ contract RegistryRateTest is Test {
         registry.rate(dealId, rating, specialReview);
 
         // Assert
-        (, , , string memory customerReview) = registry.dealReviews(dealId);
+        (,,, string memory customerReview) = registry.dealReviews(dealId);
         assertEq(customerReview, specialReview, "Should accept special characters");
     }
 
@@ -374,8 +374,8 @@ contract RegistryRateTest is Test {
         registry.rate(secondDealId, 4, "Second deal rating");
 
         // Assert - Both deals should have separate reviews
-        (, , uint8 firstCustomerRating, string memory firstCustomerReview) = registry.dealReviews(dealId);
-        (, , uint8 secondCustomerRating, string memory secondCustomerReview) = registry.dealReviews(secondDealId);
+        (,, uint8 firstCustomerRating, string memory firstCustomerReview) = registry.dealReviews(dealId);
+        (,, uint8 secondCustomerRating, string memory secondCustomerReview) = registry.dealReviews(secondDealId);
 
         assertEq(firstCustomerRating, 5, "First deal rating should be 5");
         assertEq(firstCustomerReview, "First deal rating", "First review should match");
@@ -397,8 +397,8 @@ contract RegistryRateTest is Test {
         registry.rate(1, 3, "Rating for second service"); // Second deal
 
         // Assert - Ratings should be separate for each deal
-        (, , uint8 deal0Rating, string memory deal0Review) = registry.dealReviews(0);
-        (, , uint8 deal1Rating, string memory deal1Review) = registry.dealReviews(1);
+        (,, uint8 deal0Rating, string memory deal0Review) = registry.dealReviews(0);
+        (,, uint8 deal1Rating, string memory deal1Review) = registry.dealReviews(1);
 
         assertEq(deal0Rating, 5, "First deal rating should be 5");
         assertEq(deal0Review, "Rating for first service", "First deal review should match");
