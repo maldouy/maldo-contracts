@@ -31,7 +31,7 @@ contract RegistryRateTest is Test {
     uint40 public dealId;
 
     // Events to test
-    event Rated(uint40 _dealId, uint8 _rating);
+    event Rated(uint40 _dealId, address indexed _reviewer, uint8 _rating);
 
     function setUp() public {
         // Setup test users
@@ -49,7 +49,7 @@ contract RegistryRateTest is Test {
 
         // Deploy registry
         vm.prank(owner);
-        registry = new Registry(address(token), address(badges), address(escrow));
+        registry = new Registry(address(token), address(escrow));
 
         // Setup initial state
         token.mint(tasker, INITIAL_BALANCE);
@@ -78,34 +78,30 @@ contract RegistryRateTest is Test {
         vm.prank(beneficiary);
         registry.rate(dealId, rating, review);
 
-        // Assert - Check that rating was stored
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings.length, 1, "Should have 1 rating");
-        assertEq(ratings[0].reviewer, beneficiary, "Reviewer should be beneficiary");
-        assertEq(ratings[0].rating, rating, "Rating should match");
-        assertEq(ratings[0].review, review, "Review should match");
+        // Assert - Check that rating was stored in customerReview
+        (uint8 taskerRating, string memory taskerReview, uint8 customerRating, string memory customerReview) =
+            registry.dealReviews(dealId);
+        assertEq(customerRating, rating, "Customer rating should match");
+        assertEq(customerReview, review, "Customer review should match");
+        assertEq(taskerRating, 0, "Tasker rating should be unset");
+        assertEq(bytes(taskerReview).length, 0, "Tasker review should be empty");
     }
 
-    function test_rate_beneficiaryMultipleRatings() public {
+    function test_rate_revertWhen_beneficiaryRatesTwice() public {
         // Arrange
         uint8 rating1 = 4;
         uint8 rating2 = 5;
         string memory review1 = "Good service";
         string memory review2 = "Updated: Great service!";
 
-        // Act
-        vm.startPrank(beneficiary);
+        // Act - First rating succeeds
+        vm.prank(beneficiary);
         registry.rate(dealId, rating1, review1);
-        registry.rate(dealId, rating2, review2);
-        vm.stopPrank();
 
-        // Assert - Both ratings should be stored
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings.length, 2, "Should have 2 ratings");
-        assertEq(ratings[0].rating, rating1, "First rating should match");
-        assertEq(ratings[1].rating, rating2, "Second rating should match");
-        assertEq(ratings[0].review, review1, "First review should match");
-        assertEq(ratings[1].review, review2, "Second review should match");
+        // Second rating should fail
+        vm.prank(beneficiary);
+        vm.expectRevert(IRegistry.AlreadyReviewed.selector);
+        registry.rate(dealId, rating2, review2);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -121,32 +117,30 @@ contract RegistryRateTest is Test {
         vm.prank(tasker);
         registry.rate(dealId, rating, review);
 
-        // Assert
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings.length, 1, "Should have 1 rating");
-        assertEq(ratings[0].reviewer, tasker, "Reviewer should be tasker");
-        assertEq(ratings[0].rating, rating, "Rating should match");
-        assertEq(ratings[0].review, review, "Review should match");
+        // Assert - Check that rating was stored in taskerReview
+        (uint8 taskerRating, string memory taskerReview, uint8 customerRating, string memory customerReview) =
+            registry.dealReviews(dealId);
+        assertEq(taskerRating, rating, "Tasker rating should match");
+        assertEq(taskerReview, review, "Tasker review should match");
+        assertEq(customerRating, 0, "Customer rating should be unset");
+        assertEq(bytes(customerReview).length, 0, "Customer review should be empty");
     }
 
-    function test_rate_taskerMultipleRatings() public {
+    function test_rate_revertWhen_taskerRatesTwice() public {
         // Arrange
         uint8 rating1 = 3;
         uint8 rating2 = 4;
         string memory review1 = "Client was okay";
         string memory review2 = "Client improved communication";
 
-        // Act
-        vm.startPrank(tasker);
+        // Act - First rating succeeds
+        vm.prank(tasker);
         registry.rate(dealId, rating1, review1);
-        registry.rate(dealId, rating2, review2);
-        vm.stopPrank();
 
-        // Assert
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings.length, 2, "Should have 2 ratings");
-        assertEq(ratings[0].reviewer, tasker, "First reviewer should be tasker");
-        assertEq(ratings[1].reviewer, tasker, "Second reviewer should be tasker");
+        // Second rating should fail
+        vm.prank(tasker);
+        vm.expectRevert(IRegistry.AlreadyReviewed.selector);
+        registry.rate(dealId, rating2, review2);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -156,39 +150,25 @@ contract RegistryRateTest is Test {
     function test_rate_bothPartiesCanRate() public {
         // Arrange
         uint8 beneficiaryRating = 5;
-        uint8 taskerRating = 4;
+        uint8 taskerRatingValue = 4;
         string memory beneficiaryReview = "Great service provider";
-        string memory taskerReview = "Reliable client";
+        string memory taskerReviewText = "Reliable client";
 
         // Act
         vm.prank(beneficiary);
         registry.rate(dealId, beneficiaryRating, beneficiaryReview);
 
         vm.prank(tasker);
-        registry.rate(dealId, taskerRating, taskerReview);
+        registry.rate(dealId, taskerRatingValue, taskerReviewText);
 
-        // Assert
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings.length, 2, "Should have 2 ratings total");
+        // Assert - Both reviews should be stored
+        (uint8 taskerRating, string memory taskerReview, uint8 customerRating, string memory customerReview) =
+            registry.dealReviews(dealId);
 
-        // Find ratings by reviewer
-        bool foundBeneficiaryRating = false;
-        bool foundTaskerRating = false;
-
-        for (uint256 i = 0; i < ratings.length; i++) {
-            if (ratings[i].reviewer == beneficiary) {
-                foundBeneficiaryRating = true;
-                assertEq(ratings[i].rating, beneficiaryRating, "Beneficiary rating should match");
-                assertEq(ratings[i].review, beneficiaryReview, "Beneficiary review should match");
-            } else if (ratings[i].reviewer == tasker) {
-                foundTaskerRating = true;
-                assertEq(ratings[i].rating, taskerRating, "Tasker rating should match");
-                assertEq(ratings[i].review, taskerReview, "Tasker review should match");
-            }
-        }
-
-        assertTrue(foundBeneficiaryRating, "Should find beneficiary rating");
-        assertTrue(foundTaskerRating, "Should find tasker rating");
+        assertEq(customerRating, beneficiaryRating, "Customer rating should match");
+        assertEq(customerReview, beneficiaryReview, "Customer review should match");
+        assertEq(taskerRating, taskerRatingValue, "Tasker rating should match");
+        assertEq(taskerReview, taskerReviewText, "Tasker review should match");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -254,9 +234,9 @@ contract RegistryRateTest is Test {
         uint8 rating = 5;
         string memory review = "Event test review";
 
-        // Expect event
-        vm.expectEmit(true, false, false, true);
-        emit Rated(dealId, rating);
+        // Expect event with reviewer address
+        vm.expectEmit(true, true, false, true);
+        emit Rated(dealId, beneficiary, rating);
 
         // Act
         vm.prank(beneficiary);
@@ -268,15 +248,15 @@ contract RegistryRateTest is Test {
         uint8 rating1 = 4;
         uint8 rating2 = 5;
 
-        // First event
-        vm.expectEmit(true, false, false, true);
-        emit Rated(dealId, rating1);
+        // First event from beneficiary
+        vm.expectEmit(true, true, false, true);
+        emit Rated(dealId, beneficiary, rating1);
         vm.prank(beneficiary);
         registry.rate(dealId, rating1, "First rating");
 
-        // Second event
-        vm.expectEmit(true, false, false, true);
-        emit Rated(dealId, rating2);
+        // Second event from tasker
+        vm.expectEmit(true, true, false, true);
+        emit Rated(dealId, tasker, rating2);
         vm.prank(tasker);
         registry.rate(dealId, rating2, "Second rating");
     }
@@ -286,22 +266,23 @@ contract RegistryRateTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function test_rate_allRatingValues() public {
-        // Test all valid rating values (0-5)
-        vm.startPrank(beneficiary);
+        // Test all valid rating values (1-5) using different deals
+        // Note: Rating 0 is invalid as it's used as sentinel for "not rated"
+        for (uint8 rating = 1; rating <= 5; rating++) {
+            // Create a new deal for each rating test
+            vm.prank(tasker);
+            registry.createDeal(serviceId, DEAL_PRICE, beneficiary, 1 days, "rating-value-test");
+            uint40 testDealId = uint40(rating); // dealId starts at 0, ratings start at 1
 
-        for (uint8 rating = 0; rating <= 5; rating++) {
+            // Rate the deal
+            vm.prank(beneficiary);
             string memory review = string(abi.encodePacked("Rating: ", uint256(rating)));
-            registry.rate(dealId, rating, review);
-        }
+            registry.rate(testDealId, rating, review);
 
-        vm.stopPrank();
-
-        // Assert all ratings were stored
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings.length, 6, "Should have 6 ratings (0-5)");
-
-        for (uint8 i = 0; i <= 5; i++) {
-            assertEq(ratings[i].rating, i, "Rating should match expected value");
+            // Verify the rating was stored correctly
+            (, , uint8 customerRating, string memory customerReview) = registry.dealReviews(testDealId);
+            assertEq(customerRating, rating, "Rating should match expected value");
+            assertEq(customerReview, review, "Review should match");
         }
     }
 
@@ -317,6 +298,13 @@ contract RegistryRateTest is Test {
         registry.rate(dealId, 255, "Max uint8 rating should be rejected");
     }
 
+    function test_rate_revertWhen_ratingIsZero() public {
+        // Rating 0 is invalid as it's used as sentinel for "not rated"
+        vm.prank(beneficiary);
+        vm.expectRevert(IRegistry.InvalidRating.selector);
+        registry.rate(dealId, 0, "Zero rating should be rejected");
+    }
+
     function test_rate_emptyReview() public {
         // Arrange
         uint8 rating = 5;
@@ -327,9 +315,9 @@ contract RegistryRateTest is Test {
         registry.rate(dealId, rating, emptyReview);
 
         // Assert
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings[0].review, emptyReview, "Should accept empty review");
-        assertEq(ratings[0].rating, rating, "Rating should still be set");
+        (, , uint8 customerRating, string memory customerReview) = registry.dealReviews(dealId);
+        assertEq(customerReview, emptyReview, "Should accept empty review");
+        assertEq(customerRating, rating, "Rating should still be set");
     }
 
     function test_rate_longReview() public {
@@ -350,8 +338,8 @@ contract RegistryRateTest is Test {
         registry.rate(dealId, rating, longReview);
 
         // Assert
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings[0].review, longReview, "Should accept long review");
+        (, , , string memory customerReview) = registry.dealReviews(dealId);
+        assertEq(customerReview, longReview, "Should accept long review");
     }
 
     function test_rate_specialCharactersInReview() public {
@@ -364,8 +352,8 @@ contract RegistryRateTest is Test {
         registry.rate(dealId, rating, specialReview);
 
         // Assert
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings[0].review, specialReview, "Should accept special characters");
+        (, , , string memory customerReview) = registry.dealReviews(dealId);
+        assertEq(customerReview, specialReview, "Should accept special characters");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -385,11 +373,14 @@ contract RegistryRateTest is Test {
         vm.prank(anotherBeneficiary);
         registry.rate(secondDealId, 4, "Second deal rating");
 
-        // Assert - Both ratings should be for the same service
-        IRegistry.Rating[] memory ratings = getServiceRatings(serviceId);
-        assertEq(ratings.length, 2, "Should have 2 ratings for the service");
-        assertEq(ratings[0].reviewer, beneficiary, "First rating from original beneficiary");
-        assertEq(ratings[1].reviewer, anotherBeneficiary, "Second rating from another beneficiary");
+        // Assert - Both deals should have separate reviews
+        (, , uint8 firstCustomerRating, string memory firstCustomerReview) = registry.dealReviews(dealId);
+        (, , uint8 secondCustomerRating, string memory secondCustomerReview) = registry.dealReviews(secondDealId);
+
+        assertEq(firstCustomerRating, 5, "First deal rating should be 5");
+        assertEq(firstCustomerReview, "First deal rating", "First review should match");
+        assertEq(secondCustomerRating, 4, "Second deal rating should be 4");
+        assertEq(secondCustomerReview, "Second deal rating", "Second review should match");
     }
 
     function test_rate_differentServices() public {
@@ -399,20 +390,20 @@ contract RegistryRateTest is Test {
         registry.createDeal(1, DEAL_PRICE, beneficiary, 1 days, "second-service-deal");
         vm.stopPrank();
 
-        // Act - Rate both services
+        // Act - Rate both deals
         vm.prank(beneficiary);
         registry.rate(0, 5, "Rating for first service"); // First deal
         vm.prank(beneficiary);
         registry.rate(1, 3, "Rating for second service"); // Second deal
 
-        // Assert - Ratings should be separate for each service
-        IRegistry.Rating[] memory service1Ratings = getServiceRatings(0);
-        IRegistry.Rating[] memory service2Ratings = getServiceRatings(1);
+        // Assert - Ratings should be separate for each deal
+        (, , uint8 deal0Rating, string memory deal0Review) = registry.dealReviews(0);
+        (, , uint8 deal1Rating, string memory deal1Review) = registry.dealReviews(1);
 
-        assertEq(service1Ratings.length, 1, "First service should have 1 rating");
-        assertEq(service2Ratings.length, 1, "Second service should have 1 rating");
-        assertEq(service1Ratings[0].rating, 5, "First service rating should be 5");
-        assertEq(service2Ratings[0].rating, 3, "Second service rating should be 3");
+        assertEq(deal0Rating, 5, "First deal rating should be 5");
+        assertEq(deal0Review, "Rating for first service", "First deal review should match");
+        assertEq(deal1Rating, 3, "Second deal rating should be 3");
+        assertEq(deal1Review, "Rating for second service", "Second deal review should match");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -464,37 +455,6 @@ contract RegistryRateTest is Test {
 
         assertEq(taskerStakeAfter, taskerStakeBefore, "Tasker stake should not change");
         assertEq(beneficiaryStakeAfter, beneficiaryStakeBefore, "Beneficiary stake should not change");
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            HELPER FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    function getServiceRatings(uint40 _serviceId) internal view returns (IRegistry.Rating[] memory) {
-        // This is a workaround to access the ratings mapping
-        // In a real scenario, you might need getter functions in the contract
-        try registry.ratings(_serviceId, 0) returns (address reviewer, uint8 rating, string memory review) {
-            // Count how many ratings exist
-            uint256 count = 0;
-            while (true) {
-                try registry.ratings(_serviceId, count) returns (address, uint8, string memory) {
-                    count++;
-                } catch {
-                    break;
-                }
-            }
-
-            // Create array and populate it
-            IRegistry.Rating[] memory ratings = new IRegistry.Rating[](count);
-            for (uint256 i = 0; i < count; i++) {
-                (address rev, uint8 rat, string memory rev_text) = registry.ratings(_serviceId, i);
-                ratings[i] = IRegistry.Rating(rev, rat, rev_text);
-            }
-            return ratings;
-        } catch {
-            // No ratings exist, return empty array
-            return new IRegistry.Rating[](0);
-        }
     }
 
     /*//////////////////////////////////////////////////////////////

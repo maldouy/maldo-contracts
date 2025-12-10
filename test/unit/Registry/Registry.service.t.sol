@@ -30,7 +30,7 @@ contract RegistryServiceTest is Test {
         escrow = new MockEscrow();
 
         // Deploy the registry
-        registry = new Registry(address(token), address(badges), address(escrow));
+        registry = new Registry(address(token), address(escrow));
 
         // Create test users
         alice = makeAddr("alice");

@@ -45,7 +45,7 @@ contract RegistryCreateDealTest is Test {
 
         // Deploy registry
         vm.prank(owner);
-        registry = new Registry(address(token), address(badges), address(escrow));
+        registry = new Registry(address(token), address(escrow));
 
         // Setup initial state
         token.mint(tasker, INITIAL_BALANCE);

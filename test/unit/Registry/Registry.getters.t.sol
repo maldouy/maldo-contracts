@@ -31,7 +31,7 @@ contract RegistryGettersTest is Test {
         token = new MockToken("Test", "TST");
         badges = new Badges(deployer);
         escrow = new MockEscrow();
-        registry = new Registry(address(token), address(badges), address(escrow));
+        registry = new Registry(address(token), address(escrow));
         vm.stopPrank();
     }
 
@@ -117,7 +117,7 @@ contract RegistryGettersTest is Test {
                     ratings TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function test_ratings_Single() public {
+    function test_dealReviews_Single() public {
         // Setup: create service and deal
         vm.prank(tasker1);
         registry.addService("service 1");
@@ -125,18 +125,20 @@ contract RegistryGettersTest is Test {
         vm.prank(tasker1);
         registry.createDeal(0, 100, user1, 1 days, "agreement");
 
-        // Add rating
+        // Add rating from customer
         vm.prank(user1);
         registry.rate(0, 5, "excellent");
 
-        // Access rating through mapping getter
-        (address reviewer, uint8 rating, string memory review) = registry.ratings(0, 0);
-        assertEq(reviewer, user1);
-        assertEq(rating, 5);
-        assertEq(review, "excellent");
+        // Access review through dealReviews mapping getter
+        (uint8 taskerRating, string memory taskerReview, uint8 customerRating, string memory customerReview) =
+            registry.dealReviews(0);
+        assertEq(customerRating, 5);
+        assertEq(customerReview, "excellent");
+        assertEq(taskerRating, 0); // Tasker hasn't rated yet
+        assertEq(bytes(taskerReview).length, 0);
     }
 
-    function test_ratings_Multiple() public {
+    function test_dealReviews_BothParties() public {
         // Setup: create service and deal
         vm.prank(tasker1);
         registry.addService("service 1");
@@ -144,27 +146,27 @@ contract RegistryGettersTest is Test {
         vm.prank(tasker1);
         registry.createDeal(0, 100, user1, 1 days, "agreement");
 
-        // Add ratings
+        // Add ratings from both parties
         vm.prank(user1);
         registry.rate(0, 5, "excellent");
 
         vm.prank(tasker1);
         registry.rate(0, 4, "good client");
 
-        // Access first rating
-        (address reviewer1, uint8 rating1, string memory review1) = registry.ratings(0, 0);
-        assertEq(reviewer1, user1);
-        assertEq(rating1, 5);
-        assertEq(review1, "excellent");
+        // Access both reviews through dealReviews mapping
+        (uint8 taskerRating, string memory taskerReview, uint8 customerRating, string memory customerReview) =
+            registry.dealReviews(0);
 
-        // Access second rating
-        (address reviewer2, uint8 rating2, string memory review2) = registry.ratings(0, 1);
-        assertEq(reviewer2, tasker1);
-        assertEq(rating2, 4);
-        assertEq(review2, "good client");
+        // Verify customer review (from user1)
+        assertEq(customerRating, 5);
+        assertEq(customerReview, "excellent");
+
+        // Verify tasker review (from tasker1)
+        assertEq(taskerRating, 4);
+        assertEq(taskerReview, "good client");
     }
 
-    function test_ratings_MultipleDealsAccumulateRatings() public {
+    function test_dealReviews_MultipleDealsSeparateReviews() public {
         // Setup: create service and multiple deals
         vm.prank(tasker1);
         registry.addService("service 1");
@@ -182,13 +184,13 @@ contract RegistryGettersTest is Test {
         vm.prank(user2);
         registry.rate(1, 3, "okay from deal 2");
 
-        // Verify both ratings are stored for service 0
-        (address reviewer1, uint8 rating1,) = registry.ratings(0, 0);
-        assertEq(reviewer1, user1);
-        assertEq(rating1, 5);
+        // Verify each deal has its own separate review
+        (, , uint8 deal0Rating, string memory deal0Review) = registry.dealReviews(0);
+        assertEq(deal0Rating, 5);
+        assertEq(deal0Review, "excellent from deal 1");
 
-        (address reviewer2, uint8 rating2,) = registry.ratings(0, 1);
-        assertEq(reviewer2, user2);
-        assertEq(rating2, 3);
+        (, , uint8 deal1Rating, string memory deal1Review) = registry.dealReviews(1);
+        assertEq(deal1Rating, 3);
+        assertEq(deal1Review, "okay from deal 2");
     }
 }
