@@ -7,7 +7,6 @@ import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IRegistry} from "../interfaces/IRegistry.sol";
 import {IEscrow} from "@kleros/escrow-v2/interfaces/IEscrow.sol";
-import {Badges} from "./Badges.sol";
 import {IDisputeResolver} from "../interfaces/IDisputeResolver.sol";
 import {IEscrowCustomBuyer} from "../interfaces/IEscrowCustomBuyer.sol";
 
@@ -30,9 +29,6 @@ contract Registry is IRegistry, Ownable2Step {
     /// @notice The escrow contract
     IEscrow public immutable escrow;
 
-    /// @notice The badges contract
-    Badges public immutable badges;
-
     /*//////////////////////////////////////////////////////////////
                              STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -46,18 +42,17 @@ contract Registry is IRegistry, Ownable2Step {
     /// @notice Array of deals
     Deal[] public deals;
 
-    /// @notice Maps service ids to an array of ratings
-    mapping(uint40 _serviceId => Rating[] _ratings) public ratings;
+    /// @notice Maps deal ids to their reviews
+    mapping(uint40 _dealId => DealReview _review) public dealReviews;
 
     /// @notice The dispute resolver contract
     IDisputeResolver public disputeResolver;
 
-    constructor(address _token, address _badges, address _escrow) Ownable(msg.sender) {
-        if (_token == address(0) || _badges == address(0) || _escrow == address(0)) {
+    constructor(address _token, address _escrow) Ownable(msg.sender) {
+        if (_token == address(0) || _escrow == address(0)) {
             revert InvalidConstructorParams();
         }
         token = ERC20(_token);
-        badges = Badges(_badges);
         escrow = IEscrow(_escrow);
     }
 
@@ -112,16 +107,30 @@ contract Registry is IRegistry, Ownable2Step {
     /// @inheritdoc IRegistry
     function rate(uint40 _dealId, uint8 _rating, string calldata _review) external {
         if (_dealId >= deals.length) revert InvalidDealId();
-        if (_rating > MAX_RATING) revert InvalidRating();
+        if (_rating > MAX_RATING || _rating == 0) revert InvalidRating();
 
-        if (deals[_dealId].beneficiary != msg.sender && services[deals[_dealId].serviceId].tasker != msg.sender) {
+        Deal memory deal = deals[_dealId];
+        address tasker = services[deal.serviceId].tasker;
+
+        if (msg.sender == tasker) {
+            // Tasker is reviewing the customer
+            if (dealReviews[_dealId].taskerRating != 0) {
+                revert AlreadyReviewed();
+            }
+            dealReviews[_dealId].taskerRating = _rating;
+            dealReviews[_dealId].taskerReview = _review;
+        } else if (msg.sender == deal.beneficiary) {
+            // Customer is reviewing the tasker
+            if (dealReviews[_dealId].customerRating != 0) {
+                revert AlreadyReviewed();
+            }
+            dealReviews[_dealId].customerRating = _rating;
+            dealReviews[_dealId].customerReview = _review;
+        } else {
             revert Unauthorized();
         }
 
-        // add review to the service
-        ratings[deals[_dealId].serviceId].push(Rating({reviewer: msg.sender, rating: _rating, review: _review}));
-
-        emit Rated(_dealId, _rating);
+        emit Rated(_dealId, msg.sender, _rating);
     }
 
     /// @inheritdoc IRegistry

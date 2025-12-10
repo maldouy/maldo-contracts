@@ -25,14 +25,17 @@ interface IRegistry {
         string description;
     }
 
-    /// @notice Service rating structure
-    /// @dev
-    /// @param rating A numerical rating, between 0 to 5
-    /// @param review Ideally an IPFS hash, for now simply a string
-    struct Rating {
-        address reviewer;
-        uint8 rating;
-        string review;
+    /// @notice Deal review structure containing reviews from both parties
+    /// @dev Each deal can have two reviews: one from tasker about customer, one from customer about tasker
+    /// @param taskerRating Tasker's rating of the customer (1-5)
+    /// @param taskerReview Tasker's review text of the customer
+    /// @param customerRating Customer's rating of the tasker (1-5)
+    /// @param customerReview Customer's review text of the tasker
+    struct DealReview {
+        uint8 taskerRating;
+        string taskerReview;
+        uint8 customerRating;
+        string customerReview;
     }
 
     /// @notice Deal structure
@@ -73,8 +76,9 @@ interface IRegistry {
 
     /// @notice Emitted when a deal receives a rating
     /// @param _dealId The rated deal's id
+    /// @param _reviewer Address of the reviewer (tasker or customer)
     /// @param _rating The rating given
-    event Rated(uint40 _dealId, uint8 _rating);
+    event Rated(uint40 _dealId, address indexed _reviewer, uint8 _rating);
 
     /// @notice Emitted when a service rating is disputed
     /// @param _serviceId The disputed service's id
@@ -117,6 +121,9 @@ interface IRegistry {
 
     /// @notice Thrown when dispute resolver address is invalid (zero address)
     error InvalidDisputeResolver();
+
+    /// @notice Thrown when a party tries to review the same deal twice
+    error AlreadyReviewed();
 
     //////////////////////////////////////////////////////
     ////////////////////// FUNCTIONS /////////////////////
