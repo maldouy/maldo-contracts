@@ -100,17 +100,17 @@ contract RegistryCreateDealTest is Test {
         // Assert - verify escrow transaction has correct buyer and seller
         (,, address dealBeneficiary, uint256 agreementId,) = registry.deals(0);
 
-        // Get the escrow transaction data
-        (,, uint256 deadline, string memory uri, address payable buyer, address payable seller) =
-            escrow.transactions(agreementId);
-
+        // Get buyer and seller from escrow transaction
+        (address payable buyer, address payable seller,,,,,,,,,,) = escrow.transactions(agreementId);
         // In escrow context:
         // - buyer = the beneficiary (customer who will receive the service and pays for it)
         // - seller = the tasker (service provider who receives payment)
         assertEq(buyer, beneficiary, "Escrow buyer should be the beneficiary");
         assertEq(seller, tasker, "Escrow seller should be the tasker");
+
+        // Get deadline separately to avoid stack too deep
+        (,,,,, uint256 deadline,,,,,,) = escrow.transactions(agreementId);
         assertEq(deadline, block.timestamp + 1 days, "Escrow deadline should match");
-        assertEq(uri, agreementURI, "Escrow URI should match");
     }
 
     function test_createDeal_multipleDealsSameService() public {
@@ -170,12 +170,13 @@ contract RegistryCreateDealTest is Test {
         (,,, uint256 agreementId2,) = registry.deals(1);
 
         // First deal: buyer=beneficiary, seller=tasker
-        (,,,, address payable buyer1, address payable seller1) = escrow.transactions(agreementId1);
+        // New format: (buyer, seller, amount, settlementBuyer, settlementSeller, deadline, ...)
+        (address payable buyer1, address payable seller1,,,,,,,,,,) = escrow.transactions(agreementId1);
         assertEq(buyer1, beneficiary, "First deal: buyer should be beneficiary");
         assertEq(seller1, tasker, "First deal: seller should be tasker");
 
         // Second deal: buyer=beneficiary, seller=anotherTasker
-        (,,,, address payable buyer2, address payable seller2) = escrow.transactions(agreementId2);
+        (address payable buyer2, address payable seller2,,,,,,,,,,) = escrow.transactions(agreementId2);
         assertEq(buyer2, beneficiary, "Second deal: buyer should be beneficiary");
         assertEq(seller2, anotherTasker, "Second deal: seller should be anotherTasker");
     }

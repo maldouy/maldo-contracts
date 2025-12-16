@@ -8,7 +8,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IRegistry} from "../interfaces/IRegistry.sol";
 import {IEscrow} from "@kleros/escrow-v2/interfaces/IEscrow.sol";
 import {IDisputeResolver} from "../interfaces/IDisputeResolver.sol";
-import {IEscrowCustomBuyer} from "../interfaces/IEscrowCustomBuyer.sol";
 
 /// @title Registry
 contract Registry is IRegistry, Ownable2Step {
@@ -165,7 +164,7 @@ contract Registry is IRegistry, Ownable2Step {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Creates an escrow agreement for a deal
-    /// @dev This internal function wraps the escrow contract's createERC20TransactionCustomBuyer
+    /// @dev This internal function wraps the escrow contract's createERC20Transaction
     /// @param _beneficiary The address that will receive the payment (client)
     /// @param _amount The amount of tokens to be escrowed
     /// @param _duration The duration in seconds until the escrow deadline
@@ -177,7 +176,7 @@ contract Registry is IRegistry, Ownable2Step {
         uint256 _duration,
         string calldata _agreementURI
     ) internal returns (uint256 _agreementId) {
-        _agreementId = IEscrowCustomBuyer(address(escrow)).createERC20TransactionCustomBuyer(
+        _agreementId = escrow.createERC20Transaction(
             _amount,
             IERC20(address(token)),
             block.timestamp + _duration,
