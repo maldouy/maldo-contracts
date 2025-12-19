@@ -33,7 +33,7 @@ contract RegistrySetProfileTest is Test {
         // Deploy registry as owner
         owner = makeAddr("Owner");
         vm.prank(owner);
-        registry = new Registry(address(token), address(badges), address(escrow));
+        registry = new Registry(address(token), address(escrow));
 
         // Setup test users
         user1 = makeAddr("User1");

@@ -53,7 +53,7 @@ contract RegistryTest is Test {
         token = new MaldoToken();
         badges = new Badges(deployer);
         escrow = new MockEscrow();
-        registry = new Registry(address(token), address(badges), address(escrow));
+        registry = new Registry(address(token), address(escrow));
 
         vm.stopPrank();
     }
@@ -94,14 +94,14 @@ contract RegistryTest is Test {
         registry.createDeal(0, 100, user, 1 days, "test-agreement-uri");
         vm.stopPrank();
 
-        // rate a service
+        // rate a deal - customer reviews tasker
         vm.prank(user);
         registry.rate(0, 5, "good review");
         // check emitted event
 
-        // can rate more than once
-        vm.prank(user);
-        registry.rate(0, 5, "another good review");
+        // tasker can also rate the customer
+        vm.prank(tasker);
+        registry.rate(0, 4, "reliable customer");
 
         // dispute reverts because the address is not set
         vm.prank(user);

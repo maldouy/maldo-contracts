@@ -8,6 +8,8 @@ import {MockEscrow} from "../../mocks/MockEscrow.sol";
 import {Badges} from "../../../src/contracts/Badges.sol";
 import {MockDisputeResolver} from "../../mocks/MockDisputeResolver.sol";
 import {IRegistry} from "../../../src/interfaces/IRegistry.sol";
+import {IDisputeResolver} from "../../../src/interfaces/IDisputeResolver.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RegistryAccessControlTest is Test {
     // Contract instances
@@ -35,7 +37,7 @@ contract RegistryAccessControlTest is Test {
         // Deploy registry as owner
         owner = makeAddr("Owner");
         vm.prank(owner);
-        registry = new Registry(address(token), address(badges), address(escrow));
+        registry = new Registry(address(token), address(escrow));
 
         // Setup test users
         tasker = makeAddr("Tasker");
@@ -58,10 +60,10 @@ contract RegistryAccessControlTest is Test {
 
         // Act & Assert
         vm.prank(owner);
-        registry.setDisputeResolver(address(disputeResolver));
+        registry.setDisputeResolver(disputeResolver);
 
         // Verify state change
-        assertEq(registry.disputeResolver(), address(disputeResolver));
+        assertEq(address(registry.disputeResolver()), address(disputeResolver));
     }
 
     function test_setDisputeResolver_revertWhen_calledByNonOwner() public {
@@ -70,8 +72,15 @@ contract RegistryAccessControlTest is Test {
 
         // Act & Assert
         vm.prank(unauthorized);
-        vm.expectRevert(IRegistry.Unauthorized.selector);
-        registry.setDisputeResolver(address(disputeResolver));
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, unauthorized));
+        registry.setDisputeResolver(disputeResolver);
+    }
+
+    function test_setDisputeResolver_revertWhen_zeroAddress() public {
+        // Act & Assert
+        vm.prank(owner);
+        vm.expectRevert(IRegistry.InvalidDisputeResolver.selector);
+        registry.setDisputeResolver(IDisputeResolver(address(0)));
     }
 
     // Tests for updateService
@@ -144,10 +153,112 @@ contract RegistryAccessControlTest is Test {
 
         // Set dispute resolver
         vm.prank(owner);
-        registry.setDisputeResolver(address(disputeResolver));
+        registry.setDisputeResolver(disputeResolver);
 
         // Act & Assert
         vm.prank(beneficiary);
         registry.dispute(serviceId);
+    }
+
+    // Tests for Ownable2Step ownership transfer
+    function test_transferOwnership_twoStepProcess() public {
+        // Arrange
+        address newOwner = makeAddr("NewOwner");
+
+        // Act - Step 1: Current owner initiates transfer
+        vm.prank(owner);
+        registry.transferOwnership(newOwner);
+
+        // Assert - Ownership not yet transferred
+        assertEq(registry.owner(), owner, "Owner should not change until accepted");
+        assertEq(registry.pendingOwner(), newOwner, "Pending owner should be set");
+
+        // Act - Step 2: New owner accepts ownership
+        vm.prank(newOwner);
+        registry.acceptOwnership();
+
+        // Assert - Ownership transferred
+        assertEq(registry.owner(), newOwner, "Owner should be new owner");
+        assertEq(registry.pendingOwner(), address(0), "Pending owner should be cleared");
+    }
+
+    function test_transferOwnership_revertWhen_calledByNonOwner() public {
+        // Arrange
+        address newOwner = makeAddr("NewOwner");
+
+        // Act & Assert
+        vm.prank(unauthorized);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, unauthorized));
+        registry.transferOwnership(newOwner);
+    }
+
+    function test_acceptOwnership_revertWhen_calledByNonPendingOwner() public {
+        // Arrange
+        address newOwner = makeAddr("NewOwner");
+
+        vm.prank(owner);
+        registry.transferOwnership(newOwner);
+
+        // Act & Assert - Unauthorized tries to accept
+        vm.prank(unauthorized);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, unauthorized));
+        registry.acceptOwnership();
+    }
+
+    function test_transferOwnership_newOwnerCanUseOnlyOwnerFunctions() public {
+        // Arrange
+        address newOwner = makeAddr("NewOwner");
+        disputeResolver = new MockDisputeResolver();
+
+        // Transfer ownership
+        vm.prank(owner);
+        registry.transferOwnership(newOwner);
+
+        vm.prank(newOwner);
+        registry.acceptOwnership();
+
+        // Act & Assert - New owner can call onlyOwner functions
+        vm.prank(newOwner);
+        registry.setDisputeResolver(disputeResolver);
+
+        assertEq(
+            address(registry.disputeResolver()),
+            address(disputeResolver),
+            "New owner should be able to set dispute resolver"
+        );
+    }
+
+    function test_transferOwnership_oldOwnerCannotUseOnlyOwnerFunctions() public {
+        // Arrange
+        address newOwner = makeAddr("NewOwner");
+        disputeResolver = new MockDisputeResolver();
+
+        // Transfer ownership
+        vm.prank(owner);
+        registry.transferOwnership(newOwner);
+
+        vm.prank(newOwner);
+        registry.acceptOwnership();
+
+        // Act & Assert - Old owner cannot call onlyOwner functions
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, owner));
+        registry.setDisputeResolver(disputeResolver);
+    }
+
+    function test_renounceOwnership_successful() public {
+        // Act
+        vm.prank(owner);
+        registry.renounceOwnership();
+
+        // Assert - Ownership renounced (owner set to address(0))
+        assertEq(registry.owner(), address(0), "Owner should be zero address");
+    }
+
+    function test_renounceOwnership_revertWhen_calledByNonOwner() public {
+        // Act & Assert
+        vm.prank(unauthorized);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, unauthorized));
+        registry.renounceOwnership();
     }
 }

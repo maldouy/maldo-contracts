@@ -11,4 +11,4 @@ multiline_func_header = 'params_first_multi'
 arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC}"
 
 [etherscan]
-arbitrum_sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api" }
+arbitrum_sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api", chain = 421614 }
