@@ -5,7 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Script, console} from "forge-std/Script.sol";
 
 import {IRegistry} from "../src/interfaces/IRegistry.sol";
-import {MaldoToken} from "../src/contracts/tokens/MaldoToken.sol";
+import {MaldoToken} from "../src/mocks/MaldoToken.sol";
 import {Registry} from "../src/contracts/Registry.sol";
 
 contract MaldoScript is Script {

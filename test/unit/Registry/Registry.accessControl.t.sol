@@ -5,7 +5,6 @@ import {Test, console} from "forge-std/Test.sol";
 import {Registry} from "../../../src/contracts/Registry.sol";
 import {MockToken} from "../../mocks/MockToken.sol";
 import {MockEscrow} from "../../mocks/MockEscrow.sol";
-import {Badges} from "../../../src/contracts/Badges.sol";
 import {MockDisputeResolver} from "../../mocks/MockDisputeResolver.sol";
 import {IRegistry} from "../../../src/interfaces/IRegistry.sol";
 import {IDisputeResolver} from "../../../src/interfaces/IDisputeResolver.sol";
@@ -16,7 +15,6 @@ contract RegistryAccessControlTest is Test {
     Registry public registry;
     MockToken public token;
     MockEscrow public escrow;
-    Badges public badges;
     MockDisputeResolver public disputeResolver;
 
     // Test users
@@ -32,7 +30,6 @@ contract RegistryAccessControlTest is Test {
         // Deploy mock dependencies
         token = new MockToken("TestToken", "TTK");
         escrow = new MockEscrow();
-        badges = new Badges(address(this));
 
         // Deploy registry with explicit owner
         owner = makeAddr("Owner");

@@ -8,10 +8,8 @@ import {IDisputeResolver} from "./IDisputeResolver.sol";
 interface IRegistry {
     /// @notice User structure
     /// @param profile Ideally an IPFS hash, for now simply a string
-    /// @param stake Amount of tokens staked by the user
     struct User {
         string profile;
-        uint256 stake;
     }
 
     /// @notice Service listing structure
@@ -92,12 +90,6 @@ interface IRegistry {
     /////////////////////// ERRORS ///////////////////////
     //////////////////////////////////////////////////////
 
-    /// @notice Error thrown when an invalid amount is provided
-    error InvalidAmount();
-
-    /// @notice Error thrown when user has insufficient staked tokens
-    error InsufficientStake();
-
     /// @notice Error thrown when the caller is not authorized
     error Unauthorized();
 
@@ -116,7 +108,7 @@ interface IRegistry {
     /// @notice Thrown when deal ID doesn't exist
     error InvalidDealId();
 
-    /// @notice Thrown when rating value is invalid (must be 0-5)
+    /// @notice Thrown when rating value is invalid (must be 1-5)
     error InvalidRating();
 
     /// @notice Thrown when dispute resolver address is invalid (zero address)
@@ -144,7 +136,7 @@ interface IRegistry {
 
     /// @notice Submits a rating for a deal
     /// @param _dealId ID of the deal to rate
-    /// @param _rating A numerical rating, between 0 to 5
+    /// @param _rating A numerical rating, between 1 to 5
     /// @param _review Ideally an IPFS hash, for now simply an arbitrary string
     function rate(uint40 _dealId, uint8 _rating, string calldata _review) external;
 
