@@ -43,7 +43,7 @@ contract RegistryTest is Test {
         token = new MaldoToken();
         badges = new Badges(deployer);
         escrow = new MockEscrow();
-        registry = new Registry(address(token), address(escrow));
+        registry = new Registry(address(token), address(escrow), deployer);
 
         vm.stopPrank();
     }
