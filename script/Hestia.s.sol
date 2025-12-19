@@ -29,9 +29,9 @@ contract MaldoScript is Script {
     }
 
     function deployRegistry(address _token, address _escrow) public returns (Registry) {
-        uint256 privateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        (uint256 privateKey, address deployer) = _deployer();
         vm.startBroadcast(privateKey);
-        Registry registry = new Registry(_token, _escrow);
+        Registry registry = new Registry(_token, _escrow, deployer);
         console.log("Registry deployed at:", address(registry));
         vm.stopBroadcast();
         return registry;
