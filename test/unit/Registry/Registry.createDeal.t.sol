@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Registry} from "../../../src/contracts/Registry.sol";
-import {Badges} from "../../../src/contracts/Badges.sol";
 import {IRegistry} from "../../../src/interfaces/IRegistry.sol";
 import {MockEscrow} from "../../mocks/MockEscrow.sol";
 import {MockToken} from "../../mocks/MockToken.sol";
@@ -11,7 +10,6 @@ import {MockToken} from "../../mocks/MockToken.sol";
 contract RegistryCreateDealTest is Test {
     Registry public registry;
     MockToken public token;
-    Badges public badges;
     MockEscrow public escrow;
 
     // Test users
@@ -40,7 +38,6 @@ contract RegistryCreateDealTest is Test {
 
         // Deploy mock contracts
         token = new MockToken("TestToken", "TTK");
-        badges = new Badges(address(this));
         escrow = new MockEscrow();
 
         // Deploy registry
@@ -390,20 +387,6 @@ contract RegistryCreateDealTest is Test {
         (uint40 otherServiceId, address otherTasker,) = registry.services(anotherServiceId);
         assertEq(otherServiceId, anotherServiceId, "Other service ID should be unchanged");
         assertEq(otherTasker, anotherTasker, "Other service tasker should be unchanged");
-    }
-
-    function test_createDeal_doesNotAffectStakes() public {
-        // Arrange
-        uint256 dealPrice = 100e18;
-        (, uint256 initialStake) = registry.users(tasker);
-
-        // Act
-        vm.prank(tasker);
-        registry.createDeal(serviceId, dealPrice, beneficiary, 1 days, "stake_test_deal");
-
-        // Assert - Stake should be unchanged
-        (, uint256 finalStake) = registry.users(tasker);
-        assertEq(finalStake, initialStake, "Tasker's stake should be unchanged after creating deal");
     }
 
     /*//////////////////////////////////////////////////////////////

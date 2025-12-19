@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Registry} from "../../../src/contracts/Registry.sol";
-import {Badges} from "../../../src/contracts/Badges.sol";
 import {IRegistry} from "../../../src/interfaces/IRegistry.sol";
 import {MockEscrow} from "../../mocks/MockEscrow.sol";
 import {MockToken} from "../../mocks/MockToken.sol";
@@ -11,7 +10,6 @@ import {MockToken} from "../../mocks/MockToken.sol";
 contract RegistryRateTest is Test {
     Registry public registry;
     MockToken public token;
-    Badges public badges;
     MockEscrow public escrow;
 
     // Test users
@@ -44,7 +42,6 @@ contract RegistryRateTest is Test {
 
         // Deploy mock contracts
         token = new MockToken("TestToken", "TTK");
-        badges = new Badges(address(this));
         escrow = new MockEscrow();
 
         // Deploy registry
@@ -438,23 +435,6 @@ contract RegistryRateTest is Test {
         assertEq(finalBeneficiary, originalBeneficiary, "Beneficiary should not change");
         assertEq(finalAgreementId, originalAgreementId, "Agreement ID should not change");
         assertEq(finalPrice, originalPrice, "Price should not change");
-    }
-
-    function test_rate_doesNotAffectUserStakes() public {
-        // Arrange
-        (, uint256 taskerStakeBefore) = registry.users(tasker);
-        (, uint256 beneficiaryStakeBefore) = registry.users(beneficiary);
-
-        // Act
-        vm.prank(beneficiary);
-        registry.rate(dealId, 5, "Rating should not affect stakes");
-
-        // Assert - Stakes should be unchanged
-        (, uint256 taskerStakeAfter) = registry.users(tasker);
-        (, uint256 beneficiaryStakeAfter) = registry.users(beneficiary);
-
-        assertEq(taskerStakeAfter, taskerStakeBefore, "Tasker stake should not change");
-        assertEq(beneficiaryStakeAfter, beneficiaryStakeBefore, "Beneficiary stake should not change");
     }
 
     /*//////////////////////////////////////////////////////////////

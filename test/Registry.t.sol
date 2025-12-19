@@ -5,8 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
 import {Registry} from "contracts/Registry.sol";
-import {MaldoToken} from "contracts/tokens/MaldoToken.sol";
-import {Badges} from "contracts/Badges.sol";
+import {MaldoToken} from "../src/mocks/MaldoToken.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {IRegistry} from "interfaces/IRegistry.sol";
 
@@ -34,14 +33,12 @@ contract RegistryTest is Test {
 
     Registry registry;
     MaldoToken token;
-    Badges badges;
     MockEscrow escrow;
 
     function setUp() public {
         vm.startPrank(deployer);
 
         token = new MaldoToken();
-        badges = new Badges(deployer);
         escrow = new MockEscrow();
         registry = new Registry(address(token), address(escrow), deployer);
 

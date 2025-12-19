@@ -4,14 +4,12 @@ pragma solidity ^0.8.24;
 import {Test, console} from "forge-std/Test.sol";
 import {Registry} from "../../../src/contracts/Registry.sol";
 import {MockToken} from "../../mocks/MockToken.sol";
-import {Badges} from "../../../src/contracts/Badges.sol";
 import {MockEscrow} from "../../mocks/MockEscrow.sol";
 import {IRegistry} from "../../../src/interfaces/IRegistry.sol";
 
 contract RegistryServiceTest is Test {
     Registry public registry;
     MockToken public token;
-    Badges public badges;
     MockEscrow public escrow;
 
     // Test users
@@ -26,7 +24,6 @@ contract RegistryServiceTest is Test {
     function setUp() public {
         // Deploy mock contracts
         token = new MockToken("TestToken", "TTK");
-        badges = new Badges(address(this));
         escrow = new MockEscrow();
 
         // Deploy the registry

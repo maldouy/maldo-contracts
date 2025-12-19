@@ -5,7 +5,6 @@ import {Test, console} from "forge-std/Test.sol";
 import {Registry} from "../../../src/contracts/Registry.sol";
 import {MockToken} from "../../mocks/MockToken.sol";
 import {MockEscrow} from "../../mocks/MockEscrow.sol";
-import {Badges} from "../../../src/contracts/Badges.sol";
 import {IRegistry} from "../../../src/interfaces/IRegistry.sol";
 
 contract RegistrySetProfileTest is Test {
@@ -13,7 +12,6 @@ contract RegistrySetProfileTest is Test {
     Registry public registry;
     MockToken public token;
     MockEscrow public escrow;
-    Badges public badges;
 
     // Test users
     address public owner;
@@ -28,7 +26,6 @@ contract RegistrySetProfileTest is Test {
         // Deploy mock dependencies
         token = new MockToken("TestToken", "TTK");
         escrow = new MockEscrow();
-        badges = new Badges(address(this));
 
         // Deploy registry as owner
         owner = makeAddr("Owner");
@@ -57,7 +54,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(profileData);
 
         // Verify state change
-        (string memory storedProfile,) = registry.users(user1);
+        (string memory storedProfile) = registry.users(user1);
         assertEq(storedProfile, profileData, "Profile should be stored correctly");
     }
 
@@ -73,7 +70,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(emptyProfile);
 
         // Verify state change
-        (string memory storedProfile,) = registry.users(user1);
+        (string memory storedProfile) = registry.users(user1);
         assertEq(storedProfile, emptyProfile, "Empty profile should be stored correctly");
     }
 
@@ -87,7 +84,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(initialProfile);
 
         // Verify initial state
-        (string memory storedProfile,) = registry.users(user1);
+        (string memory storedProfile) = registry.users(user1);
         assertEq(storedProfile, initialProfile, "Initial profile should be stored");
 
         // Act & Assert - Update profile
@@ -98,7 +95,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(updatedProfile);
 
         // Verify updated state
-        (string memory finalProfile,) = registry.users(user1);
+        (string memory finalProfile) = registry.users(user1);
         assertEq(finalProfile, updatedProfile, "Profile should be updated correctly");
     }
 
@@ -119,9 +116,9 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(profile3);
 
         // Assert - Verify each profile is stored correctly
-        (string memory storedProfile1,) = registry.users(user1);
-        (string memory storedProfile2,) = registry.users(user2);
-        (string memory storedProfile3,) = registry.users(user3);
+        (string memory storedProfile1) = registry.users(user1);
+        (string memory storedProfile2) = registry.users(user2);
+        (string memory storedProfile3) = registry.users(user3);
 
         assertEq(storedProfile1, profile1, "User1 profile should be correct");
         assertEq(storedProfile2, profile2, "User2 profile should be correct");
@@ -148,7 +145,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(longProfile);
 
         // Verify state change
-        (string memory storedProfile,) = registry.users(user1);
+        (string memory storedProfile) = registry.users(user1);
         assertEq(storedProfile, longProfile, "Long profile should be stored correctly");
     }
 
@@ -164,7 +161,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(specialProfile);
 
         // Verify state change
-        (string memory storedProfile,) = registry.users(user1);
+        (string memory storedProfile) = registry.users(user1);
         assertEq(storedProfile, specialProfile, "Profile with special characters should be stored");
     }
 
@@ -180,7 +177,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(jsonProfile);
 
         // Verify state change
-        (string memory storedProfile,) = registry.users(user1);
+        (string memory storedProfile) = registry.users(user1);
         assertEq(storedProfile, jsonProfile, "JSON profile should be stored correctly");
     }
 
@@ -196,7 +193,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(ipfsProfile);
 
         // Verify state change
-        (string memory storedProfile,) = registry.users(user1);
+        (string memory storedProfile) = registry.users(user1);
         assertEq(storedProfile, ipfsProfile, "IPFS hash profile should be stored correctly");
     }
 
@@ -251,23 +248,6 @@ contract RegistrySetProfileTest is Test {
                              STATE VERIFICATION
     //////////////////////////////////////////////////////////////*/
 
-    function test_setProfile_doesNotAffectStake() public {
-        // Arrange - Setup user
-        token.mint(user1, 1000 ether);
-
-        // Verify initial stake (should be 0 since stake/unstake removed)
-        (, uint256 initialStake) = registry.users(user1);
-        assertEq(initialStake, 0, "Initial stake should be 0");
-
-        // Act - Set profile
-        vm.prank(user1);
-        registry.setProfile("Test profile");
-
-        // Assert - Stake field should remain unchanged at 0
-        (, uint256 finalStake) = registry.users(user1);
-        assertEq(finalStake, initialStake, "Stake field should not be affected by profile setting");
-    }
-
     function test_setProfile_doesNotAffectOtherUsers() public {
         // Arrange - Set profiles for multiple users
         vm.prank(user1);
@@ -281,8 +261,8 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile("User 1 updated profile");
 
         // Assert - User 2's profile should be unchanged
-        (string memory user1Profile,) = registry.users(user1);
-        (string memory user2Profile,) = registry.users(user2);
+        (string memory user1Profile) = registry.users(user1);
+        (string memory user2Profile) = registry.users(user2);
 
         assertEq(user1Profile, "User 1 updated profile", "User 1 profile should be updated");
         assertEq(user2Profile, "User 2 profile", "User 2 profile should be unchanged");
@@ -307,7 +287,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(profile3);
 
         // Assert - Only the last profile should be stored
-        (string memory finalProfile,) = registry.users(user1);
+        (string memory finalProfile) = registry.users(user1);
         assertEq(finalProfile, profile3, "Final profile should be the last one set");
     }
 
@@ -321,7 +301,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile("Initial profile");
 
         // Verify initial state
-        (string memory initialProfile,) = registry.users(user1);
+        (string memory initialProfile) = registry.users(user1);
         assertTrue(bytes(initialProfile).length > 0, "Initial profile should not be empty");
 
         // Act - Reset to empty profile
@@ -332,7 +312,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile("");
 
         // Assert - Profile should be empty
-        (string memory finalProfile,) = registry.users(user1);
+        (string memory finalProfile) = registry.users(user1);
         assertEq(finalProfile, "", "Profile should be reset to empty");
     }
 
@@ -352,7 +332,7 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(profileData);
 
         // Assert - Profile should still be stored correctly
-        (string memory storedProfile,) = registry.users(user1);
+        (string memory storedProfile) = registry.users(user1);
         assertEq(storedProfile, profileData, "Profile should be stored correctly even when set twice");
     }
 
@@ -387,8 +367,8 @@ contract RegistrySetProfileTest is Test {
         registry.setProfile(longProfile);
 
         // Assert - Both should succeed
-        (string memory profile1,) = registry.users(user1);
-        (string memory profile2,) = registry.users(user2);
+        (string memory profile1) = registry.users(user1);
+        (string memory profile2) = registry.users(user2);
 
         assertEq(profile1, shortProfile, "Short profile should be stored");
         assertEq(profile2, longProfile, "Long profile should be stored");
