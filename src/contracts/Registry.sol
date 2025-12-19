@@ -47,12 +47,15 @@ contract Registry is IRegistry, Ownable2Step {
     /// @notice The dispute resolver contract
     IDisputeResolver public disputeResolver;
 
-    constructor(address _token, address _escrow) Ownable(msg.sender) {
-        if (_token == address(0) || _escrow == address(0)) {
+    constructor(address _token, address _escrow, address _owner) Ownable(_owner) {
+        if (_token == address(0) || _escrow == address(0) || _owner == address(0)) {
             revert InvalidConstructorParams();
         }
         token = ERC20(_token);
         escrow = IEscrow(_escrow);
+
+        // Max approve escrow to pull tokens from Registry
+        IERC20(_token).approve(_escrow, type(uint256).max);
     }
 
     /// @inheritdoc IRegistry
