@@ -34,10 +34,9 @@ contract RegistryAccessControlTest is Test {
         escrow = new MockEscrow();
         badges = new Badges(address(this));
 
-        // Deploy registry as owner
+        // Deploy registry with explicit owner
         owner = makeAddr("Owner");
-        vm.prank(owner);
-        registry = new Registry(address(token), address(escrow));
+        registry = new Registry(address(token), address(escrow), owner);
 
         // Setup test users
         tasker = makeAddr("Tasker");
