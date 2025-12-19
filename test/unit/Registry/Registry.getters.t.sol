@@ -31,7 +31,7 @@ contract RegistryGettersTest is Test {
         token = new MockToken("Test", "TST");
         badges = new Badges(deployer);
         escrow = new MockEscrow();
-        registry = new Registry(address(token), address(escrow));
+        registry = new Registry(address(token), address(escrow), address(this));
         vm.stopPrank();
     }
 

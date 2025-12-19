@@ -19,16 +19,6 @@ contract MockEscrow {
         address,
         uint256,
         string memory,
-        address payable
-    ) external returns (uint256) {
-        return nextId++;
-    }
-
-    function createERC20TransactionCustomBuyer(
-        uint256,
-        address,
-        uint256,
-        string memory,
         address payable,
         address payable
     ) external returns (uint256) {
@@ -53,7 +43,7 @@ contract RegistryTest is Test {
         token = new MaldoToken();
         badges = new Badges(deployer);
         escrow = new MockEscrow();
-        registry = new Registry(address(token), address(escrow));
+        registry = new Registry(address(token), address(escrow), deployer);
 
         vm.stopPrank();
     }
